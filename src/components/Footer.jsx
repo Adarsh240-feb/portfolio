@@ -7,7 +7,7 @@ const Footer = () => {
   const socialLinks = [
     {
       name: 'LinkedIn',
-      url: 'hhttps://www.linkedin.com/in/adarsh-kesharwani-bba666315',
+      url: 'https://www.linkedin.com/in/adarsh-kesharwani-bba666315',
       icon: FaLinkedin,
     },
     {
