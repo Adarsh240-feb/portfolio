@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FiCpu,FiGitPullRequest, FiAward } from 'react-icons/fi';
 
-// Update with your actual GitHub username to show your contribution chart
 const GITHUB_USERNAME = 'Adarsh240-feb';
 
 const Section = ({ icon: Icon, title, children }) => (
@@ -76,7 +75,7 @@ const AboutPage = () => {
         <Section icon={FiGitPullRequest} title="Open Source Contributions">
           <BulletList
             items={[
-              '7+ Patches Merged In Wikimedia Ecosystem Through Gerrit Code Review Workflows.',
+              '9+ Patches Merged In Wikimedia Ecosystem Through Gerrit Code Review Workflows.',
               'Tracked And Resolved Tasks Via Phabricator With Structured Issue Management.',
               'Enhanced Documentation And Developer Tooling For Community Contribution.',
             ]}
@@ -97,9 +96,6 @@ const AboutPage = () => {
         <section className="mt-12">
           <h3 className="text-xl md:text-2xl font-semibold text-black dark:text-white mb-4">GitHub Contributions</h3>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900/60">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Update your username in this page to display the chart.
-            </p>
             <div className="overflow-x-auto">
               <img
                 src={`https://ghchart.rshah.org/${GITHUB_USERNAME}`}
