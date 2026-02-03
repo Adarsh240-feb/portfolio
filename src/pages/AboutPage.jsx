@@ -75,7 +75,7 @@ const AboutPage = () => {
         <Section icon={FiGitPullRequest} title="Open Source Contributions">
           <BulletList
             items={[
-              '9+ Patches Merged In Wikimedia Ecosystem Through Gerrit Code Review Workflows.',
+              '10+ Patches Merged In Wikimedia Ecosystem Through Gerrit Code Review Workflows.',
               'Tracked And Resolved Tasks Via Phabricator With Structured Issue Management.',
               'Enhanced Documentation And Developer Tooling For Community Contribution.',
             ]}
