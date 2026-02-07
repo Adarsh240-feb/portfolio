@@ -8,7 +8,7 @@ const roles = [
     period: '2025 – Present',
     type: 'Remote Contributor',
     points: [
-      '7+ patches merged across Wikimedia projects.',
+      '10+ patches merged across Wikimedia projects.',
       'Active participation in issues, reviews, and improving contributor experience.',
     ],
   },
