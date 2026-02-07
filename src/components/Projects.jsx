@@ -38,7 +38,7 @@ const Projects = () => {
       id: 4,
       title: 'FlavourFlow',
       description: 'A full-stack food delivery platform with real-time order tracking, restaurant management, and secure payment integration for seamless food ordering experiences.',
-      image: '/images/flavourflow.png',
+      image: '/images/flaovurflow.png',
       tags: ['JavaScript', 'Express', 'API Integration'],
       github: 'https://github.com/Adarsh240-feb/FOODDEL',
       demo: 'https://flavourflow.vercel.app/',
