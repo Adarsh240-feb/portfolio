@@ -109,6 +109,17 @@ const Navbar = () => {
               </a>
             ))}
 
+            {/* Resume Button */}
+            <a
+              href="/resume.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-medium transition-colors relative group"
+            >
+              Resume
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black dark:bg-white transition-all group-hover:w-full"></span>
+            </a>
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
@@ -192,6 +203,14 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
+          <a
+            href="/resume.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-medium transition-colors"
+          >
+            Resume
+          </a>
         </div>
       </motion.div>
     </motion.nav>

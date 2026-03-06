@@ -3,6 +3,16 @@ import { motion } from 'framer-motion';
 
 const roles = [
   {
+    title: 'Full Stack Developer Intern',
+    org: 'Link2logistics',
+    period: 'February 2026 – Present',
+    type: 'Remote',
+    points: [
+      'Developing a commercial-level administrative dashboard to streamline operations for a startup-based management platform.',
+      'Engineering robust full-stack solutions to facilitate communication between warehouse owners and merchants, focusing on real-time inventory oversight.',
+    ],
+  },
+  {
     title: 'Open Source Contributor',
     org: 'Wikimedia ecosystem',
     period: '2025 – Present',
