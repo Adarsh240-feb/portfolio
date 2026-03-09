@@ -17,7 +17,7 @@ const Footer = () => {
     },
     {
       name: 'Instagram',
-      url: 'https://www.instagram.com/just_adarshhh',
+      url: 'https://www.instagram.com/return_adarshhhh',
       icon: FaInstagram,
     },
   ];
