@@ -14,8 +14,18 @@ const Projects = () => {
       demo: 'https://uitmap.com/',
       gradient: 'from-blue-500 to-purple-600',
     },
-    {
+        {
       id: 2,
+      title: 'Link2Logistics',
+      description: 'A B2B warehouse marketplace platform that connects warehouse owners with merchants seeking storage space across India. It enables owners to list and manage warehouses, while merchants can search, filter, and send inquiries.',
+      image: '/images/link2logistics.png',
+      tags: ['Next.js', 'Firebase','MongoDB', 'Tailwind CSS'],
+      github: 'https://github.com/link2logistics001/WareHouse-Hub',
+      demo: 'https://www.link2logistics.com/',
+      gradient: 'from-amber-500 to-orange-600',
+    },
+    {
+      id: 3,
       title: 'WikiClubTech UIT',
       description: 'A national-level community website for WikiClubTech UIT that showcases the club and features a live contribution board displaying real-time contributions to the Wikimedia ecosystem by club members.',
       image: '/images/WikiMainLogo.png',
@@ -25,7 +35,7 @@ const Projects = () => {
       gradient: 'from-purple-500 to-pink-600',
     },
     {
-      id: 3,
+      id: 4,
       title: 'Udaan UGI',
       description: 'A sports website providing real-time scores updates for more than 13 sports. Built for United Group Of Institutions, it delivers live results, schedules, and news, enhancing the sports experience for users and organizers.',
       image: '/images/udaanugi.png',
@@ -35,7 +45,7 @@ const Projects = () => {
       gradient: 'from-green-500 to-blue-500',
     },
     {
-      id: 4,
+      id: 5,
       title: 'FlavourFlow',
       description: 'A full-stack food delivery platform with real-time order tracking, restaurant management, and secure payment integration for seamless food ordering experiences.',
       image: '/images/flaovurflow.png',
@@ -44,16 +54,6 @@ const Projects = () => {
       demo: 'https://flavourflow.vercel.app/',
       gradient: 'from-cyan-500 to-blue-600',
     },
-    // {
-    //   id: 5,
-    //   title: 'Social Media Platform',
-    //   description: 'I built a social networking platform with features like posts, comments, likes, and real-time messaging.',
-    //   image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
-    //   tags: ['React', 'Socket.io', 'PostgreSQL'],
-    //   github: 'https://github.com',
-    //   demo: 'https://demo.com',
-    //   gradient: 'from-pink-500 to-rose-600',
-    // },
   ];
 
   return (

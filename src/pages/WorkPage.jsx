@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const roles = [
   {
     title: 'Full Stack Developer Intern',
-    org: 'Link2logistics',
+    org: 'VETRO GLOBALEDGE LLP',
     period: 'February 2026 – Present',
     type: 'Remote',
     points: [
