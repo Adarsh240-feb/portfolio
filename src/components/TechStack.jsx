@@ -8,12 +8,14 @@ import {
   FaGithub,
   FaHtml5,
   FaCss3Alt,
+  
 } from 'react-icons/fa';
-import { SiExpress, SiMongodb, SiJavascript, SiTailwindcss, SiFirebase, SiGoogleappsscript, SiMysql } from 'react-icons/si';
+import { SiExpress, SiMongodb, SiJavascript, SiTailwindcss, SiFirebase, SiGoogleappsscript, SiMysql, SiNextdotjs } from 'react-icons/si';
 
 const TechStack = () => {
   const technologies = [
     { name: 'React.js', icon: FaReact, color: '#61DAFB' },
+    { name: 'Next.js', icon: SiNextdotjs, color: '#000000' },
     { name: 'Node.js', icon: FaNode, color: '#339933' },
     { name: 'Express.js', icon: SiExpress, color: '#000000' },
     { name: 'MongoDB', icon: SiMongodb, color: '#47A248' },
