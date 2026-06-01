@@ -111,7 +111,7 @@ const Navbar = () => {
 
             {/* Resume Button */}
             <a
-              href="/resume.pdf"
+              href="/Resume.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-medium transition-colors relative group"
