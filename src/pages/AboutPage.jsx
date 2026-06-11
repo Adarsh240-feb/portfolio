@@ -75,8 +75,8 @@ const AboutPage = () => {
         <Section icon={FiGitPullRequest} title="Open Source Contributions">
           <BulletList
             items={[
-              '10+ Patches Merged In Wikimedia Ecosystem Through Gerrit Code Review Workflows.',
-              'Tracked And Resolved Tasks Via Phabricator With Structured Issue Management.',
+              <span>10+ Patches Merged In Wikimedia Ecosystem Through <a href="https://gerrit.wikimedia.org/r/q/owner:Akaza24" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Gerrit Code Review</a> Workflows.</span>,
+              <span>Tracked And Resolved Tasks Via <a href="https://phabricator.wikimedia.org/p/Akaza24/" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Phabricator</a> With Structured Issue Management.</span>,
               'Enhanced Documentation And Developer Tooling For Community Contribution.',
             ]}
           />
