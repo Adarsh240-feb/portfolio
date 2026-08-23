@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiCpu,FiGitPullRequest, FiAward } from 'react-icons/fi';
+import { FiCpu, FiGitPullRequest, FiAward, FiGlobe } from 'react-icons/fi';
 
 const GITHUB_USERNAME = 'Adarsh240-feb';
 
@@ -78,6 +78,15 @@ const AboutPage = () => {
               <span>10+ Patches Merged In Wikimedia Ecosystem Through <a href="https://gerrit.wikimedia.org/r/q/owner:Akaza24" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Gerrit Code Review</a> Workflows.</span>,
               <span>Tracked And Resolved Tasks Via <a href="https://phabricator.wikimedia.org/p/Akaza24/" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Phabricator</a> With Structured Issue Management.</span>,
               'Enhanced Documentation And Developer Tooling For Community Contribution.',
+            ]}
+          />
+        </Section>
+
+        <Section icon={FiGlobe} title="Global Recognition">
+          <BulletList
+            items={[
+              <span>Featured on <a href="https://meta.wikimedia.org/wiki/IIITH-OKI/Wikiclub_Tech/Road_To_Wiki/Contribution_Ledger" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Wikimedia Meta Wiki</a> pages — recognized as a contributor in community spotlights and event recaps.</span>,
+              <span>Recognized on <a href="https://meta.wikimedia.org/wiki/IIITH-OKI/WikiClub_Tech/WikiClubTechMilestone" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">WikiClubTech Milestone</a> page for contributions to the Wikimedia movement.</span>,
             ]}
           />
         </Section>
