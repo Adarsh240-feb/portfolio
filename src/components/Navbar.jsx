@@ -111,7 +111,7 @@ const Navbar = () => {
 
             {/* Resume Button */}
             <a
-              href="/Adarsh_Resume (4).pdf"
+              href="/Adarsh_Resume.pdf"
               download="Adarsh_Resume.pdf"
               className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-medium transition-colors relative group"
             >
@@ -203,7 +203,7 @@ const Navbar = () => {
             </a>
           ))}
           <a
-            href="/Adarsh_Resume (4).pdf"
+            href="/Adarsh_Resume.pdf"
             download="Adarsh_Resume.pdf"
             className="block text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-medium transition-colors"
           >
