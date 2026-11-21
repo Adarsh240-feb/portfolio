@@ -36,16 +36,6 @@ const Projects = () => {
     },
     {
       id: 4,
-      title: 'Udaan UGI',
-      description: 'A sports website providing real-time scores updates for more than 13 sports. Built for United Group Of Institutions, it delivers live results, schedules, and news, enhancing the sports experience for users and organizers.',
-      image: '/images/udaanugi.png',
-      tags: ['React.js', 'Tailwind CSS', 'Firebase'],
-      github: 'https://github.com/Adarsh240-feb/Udaan-UGI',
-      demo: 'https://udaan-ugi.vercel.app/',
-      gradient: 'from-green-500 to-blue-500',
-    },
-    {
-      id: 5,
       title: 'Gerrit-It',
       description: 'A contributor analytics and reporting platform for Wikimedia Gerrit technical projects. Tracks patches authored, code reviews conducted, and repository footprints while generating verified contribution reports.',
       image: '/images/gerrit-it.png',
@@ -55,7 +45,7 @@ const Projects = () => {
       gradient: 'from-sky-500 to-indigo-600',
     },
     {
-      id: 6,
+      id: 5,
       title: 'Commons Collage Studio',
       description: 'A professional browser-based image editing and collage composition studio for Wikimedia Commons. Features custom layouts, pastel UI themes, color grading, non-destructive adjustments, and attribution tools.',
       image: '/images/wikicommons-collage-studio.png',
