@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
+import { MotionConfig } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -10,21 +10,21 @@ import WorkPage from './pages/WorkPage';
 
 function App() {
   return (
-    <ThemeProvider>
+    <MotionConfig reducedMotion="user">
       <Router>
-        <div className="App bg-white dark:bg-black transition-colors duration-300">
+        <div className="min-h-screen bg-paper text-ink selection:bg-lime selection:text-ink">
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/work" element={<WorkPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
-            {/* <Route path="/contact" element={<ContactPage />} /> */}
+            <Route path="*" element={<Home />} />
           </Routes>
           <Footer />
         </div>
       </Router>
-    </ThemeProvider>
+    </MotionConfig>
   );
 }
 

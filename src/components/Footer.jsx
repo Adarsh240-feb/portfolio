@@ -1,54 +1,50 @@
-import React from 'react';
-import { FaLinkedin, FaGithub, FaInstagram } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { ArrowUp } from 'lucide-react';
+import { PROFILE } from '../data/portfolioData';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
+  const [localTime, setLocalTime] = useState('');
 
-  const socialLinks = [
-    {
-      name: 'LinkedIn',
-      url: 'https://www.linkedin.com/in/adarsh-kesharwani-bba666315',
-      icon: FaLinkedin,
-    },
-    {
-      name: 'GitHub',
-      url: 'https://github.com/Adarsh240-feb',
-      icon: FaGithub,
-    },
-    {
-      name: 'Instagram',
-      url: 'https://www.instagram.com/return_adarshhhh',
-      icon: FaInstagram,
-    },
-  ];
+  useEffect(() => {
+    const updateClock = () => {
+      try {
+        const formatted = new Intl.DateTimeFormat('en-IN', {
+          timeZone: PROFILE.timezone || 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        }).format(new Date());
+        setLocalTime(formatted);
+      } catch {
+        setLocalTime('');
+      }
+    };
+    updateClock();
+    const timer = setInterval(updateClock, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <footer className="bg-gray-100 dark:bg-gray-900 text-black dark:text-white py-8 transition-colors duration-300">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Copyright */}
-          <p className="text-gray-600 dark:text-gray-400 text-center md:text-left">
-            &copy; {currentYear} • Adarsh Kesharwani
-          </p>
+    <footer className="border-t border-ink/10 py-8 px-5 sm:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm font-medium text-muted">
+        <div>
+          &copy; {new Date().getFullYear()} {PROFILE.name}
+        </div>
 
-          {/* Social Links */}
-          <div className="flex items-center gap-6">
-            {socialLinks.map((social) => {
-              const Icon = social.icon;
-              return (
-                <a
-                  key={social.name}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors duration-300"
-                  aria-label={social.name}
-                >
-                  <Icon className="text-2xl" />
-                </a>
-              );
-            })}
-          </div>
+        <div className="flex items-center gap-5">
+          {localTime && (
+            <span className="font-mono text-xs text-ink/75">
+              Prayagraj &middot; {localTime} IST
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-ink/15 text-ink font-semibold hover:bg-lime transition-colors"
+          >
+            <span>Top</span>
+            <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </footer>

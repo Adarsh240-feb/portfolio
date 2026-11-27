@@ -1,104 +1,771 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, {
+  Component,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import Matter from 'matter-js';
+import { ArrowDown, Download, RotateCcw, Sparkles } from 'lucide-react';
+import { GUN_CARDS, PALETTE, PROFILE } from '../data/portfolioData';
+import PortfolioGunVisual from './PortfolioGunVisual';
+import { scrollToSection } from './Navbar';
+
+const PortfolioGun3D = lazy(() => import('./PortfolioGun3D'));
+
+class WebGLErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+const SIZE_DIMENSIONS = {
+  sm: { w: 142, h: 64 },
+  md: { w: 168, h: 72 },
+  lg: { w: 192, h: 78 },
+};
+
+const MAX_ACTIVE_CARDS = 38;
+const MAX_SETTLED_CARDS = 12;
 
 const Hero = () => {
-  const AnimatedText = ({ text, colors, direction = 'ltr' }) => {
-    const chars = text.split('');
-    const displayChars = direction === 'rtl' ? chars.reverse() : chars;
-    
-    return (
-      <motion.span 
-        className={`bg-gradient-to-r ${colors} bg-clip-text text-transparent inline-block`}
-        animate={{
-          backgroundPosition: ['0% center', '100% center', '0% center'],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'linear',
-        }}
-        style={{ 
-          direction: direction === 'rtl' ? 'rtl' : 'ltr',
-          backgroundSize: '200% 200%',
-        }}
-      >
-        {displayChars.map((char, index) => (
-          <motion.span
-            key={index}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.35,
-              delay: index * 0.06,
-              ease: 'easeOut',
-            }}
-            className="inline-block"
-          >
-            {char === ' ' ? '\u00A0' : char}
-          </motion.span>
-        ))}
-      </motion.span>
+  const heroRef = useRef(null);
+  const gunZoneRef = useRef(null);
+  const trayRef = useRef(null);
+
+  const engineRef = useRef(null);
+  const wallsRef = useRef([]);
+  const bodiesMapRef = useRef(new Map());
+  const cardElMapRef = useRef(new Map());
+  const rafRef = useRef(null);
+  const spawnIntervalRef = useRef(null);
+  const settleTimerRef = useRef(null);
+  const cardIndexRef = useRef(0);
+  const uidCounterRef = useRef(0);
+  const isHeroVisibleRef = useRef(true);
+  const isSprayingRef = useRef(false);
+  const cardsRef = useRef([]);
+
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [isSpraying, setIsSpraying] = useState(false);
+  const [recoilCounter, setRecoilCounter] = useState(0);
+  const [phase, setPhase] = useState('idle'); // 'idle' | 'physics' | 'settled'
+  const [cards, setCards] = useState([]);
+  const [mount3D, setMount3D] = useState(false);
+
+  useEffect(() => {
+    cardsRef.current = cards;
+  }, [cards]);
+
+  // Detect prefers-reduced-motion
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // Defer 3D Canvas mount slightly so first paint & LCP stay ultra-fast (Lighthouse 90+)
+  useEffect(() => {
+    if (reducedMotion) return;
+    const id = window.requestAnimationFrame(() => {
+      setMount3D(true);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [reducedMotion]);
+
+  // Seed static grid immediately if reduced-motion is active
+  const staticGridCards = useMemo(
+    () =>
+      GUN_CARDS.slice(0, MAX_SETTLED_CARDS).map((item, idx) => ({
+        uid: `static-${idx}`,
+        ...item,
+      })),
+    []
+  );
+
+  // Build / rebuild invisible Matter.js boundary walls inside the Hero
+  const rebuildWalls = useCallback(() => {
+    const engine = engineRef.current;
+    const heroEl = heroRef.current;
+    if (!engine || !heroEl) return;
+
+    if (wallsRef.current.length) {
+      Matter.Composite.remove(engine.world, wallsRef.current);
+    }
+
+    const rect = heroEl.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    const thickness = 80;
+
+    const wallOpts = {
+      isStatic: true,
+      restitution: 0.45,
+      friction: 0.4,
+      label: 'wall',
+    };
+
+    const floor = Matter.Bodies.rectangle(
+      w / 2,
+      h + thickness / 2 - 12,
+      w + thickness * 2,
+      thickness,
+      wallOpts
     );
+    const ceiling = Matter.Bodies.rectangle(
+      w / 2,
+      -thickness / 2,
+      w + thickness * 2,
+      thickness,
+      wallOpts
+    );
+    const leftWall = Matter.Bodies.rectangle(
+      -thickness / 2 + 8,
+      h / 2,
+      thickness,
+      h * 2,
+      wallOpts
+    );
+    const rightWall = Matter.Bodies.rectangle(
+      w + thickness / 2 - 8,
+      h / 2,
+      thickness,
+      h * 2,
+      wallOpts
+    );
+
+    wallsRef.current = [floor, ceiling, leftWall, rightWall];
+    Matter.Composite.add(engine.world, wallsRef.current);
+  }, []);
+
+  // Initialize Matter.js engine once
+  useEffect(() => {
+    if (reducedMotion) return;
+
+    const engine = Matter.Engine.create({
+      gravity: { x: 0, y: 1.15, scale: 0.001 },
+      positionIterations: 6,
+      velocityIterations: 4,
+    });
+    engineRef.current = engine;
+    rebuildWalls();
+
+    const onResize = () => rebuildWalls();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (spawnIntervalRef.current) clearInterval(spawnIntervalRef.current);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+      Matter.World.clear(engine.world, false);
+      Matter.Engine.clear(engine);
+      engineRef.current = null;
+    };
+  }, [reducedMotion, rebuildWalls]);
+
+  // Pause physics loop when Hero scrolls offscreen
+  useEffect(() => {
+    const heroEl = heroRef.current;
+    if (!heroEl) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isHeroVisibleRef.current = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(heroEl);
+    return () => observer.disconnect();
+  }, []);
+
+  // Sync Matter.js body positions directly to DOM nodes at 60fps (no React re-renders per frame)
+  const startPhysicsLoop = useCallback(() => {
+    if (rafRef.current) return;
+    let lastTime = performance.now();
+
+    const tick = (now) => {
+      const engine = engineRef.current;
+      if (!engine) {
+        rafRef.current = null;
+        return;
+      }
+
+      const dt = Math.min(now - lastTime, 32);
+      lastTime = now;
+
+      if (isHeroVisibleRef.current) {
+        Matter.Engine.update(engine, dt);
+
+        bodiesMapRef.current.forEach((entry, uid) => {
+          const el = cardElMapRef.current.get(uid);
+          if (!el || entry.settled) return;
+          const { body, width, height } = entry;
+          const x = body.position.x - width / 2;
+          const y = body.position.y - height / 2;
+          el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(
+            1
+          )}px, 0) rotate(${body.angle.toFixed(3)}rad)`;
+        });
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const stopPhysicsLoop = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  const layoutSettledCards = useCallback((cardList) => {
+    const heroEl = heroRef.current;
+    const trayEl = trayRef.current;
+    if (!heroEl || !trayEl || !cardList.length) return;
+
+    const heroRect = heroEl.getBoundingClientRect();
+    const trayRect = trayEl.getBoundingClientRect();
+    const relLeft = trayRect.left - heroRect.left;
+    const relTop = trayRect.top - heroRect.top;
+    const trayWidth = trayRect.width;
+
+    const cols = trayWidth < 460 ? 2 : trayWidth < 760 ? 3 : 4;
+    const gap = 10;
+    const cellW = Math.min(182, (trayWidth - gap * (cols - 1)) / cols);
+    const cellH = 66;
+
+    cardList.forEach((card, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const targetX = relLeft + col * (cellW + gap);
+      const targetY = relTop + row * (cellH + gap);
+
+      const el = cardElMapRef.current.get(card.uid);
+      if (el) {
+        el.style.width = `${cellW}px`;
+        el.style.height = `${cellH}px`;
+        el.style.transition =
+          'transform 680ms cubic-bezier(0.22, 1.28, 0.36, 1), width 400ms ease, height 400ms ease, box-shadow 220ms ease';
+        el.style.transform = `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(
+          1
+        )}px, 0) rotate(0deg)`;
+      }
+    });
+  }, []);
+
+  // Settle piled cards into a tidy, clickable grid in the hero tray
+  const settleIntoGrid = useCallback(() => {
+    stopPhysicsLoop();
+
+    const current = cardsRef.current;
+    if (!current.length) return;
+
+    const seenLabels = new Set();
+    const kept = [];
+    for (let i = current.length - 1; i >= 0; i--) {
+      const card = current[i];
+      if (!seenLabels.has(card.label) || current.length <= MAX_SETTLED_CARDS) {
+        seenLabels.add(card.label);
+        kept.unshift(card);
+      }
+      if (kept.length >= MAX_SETTLED_CARDS) break;
+    }
+
+    const keptIds = new Set(kept.map((c) => c.uid));
+    bodiesMapRef.current.forEach((entry, uid) => {
+      if (!keptIds.has(uid) && engineRef.current) {
+        Matter.Composite.remove(engineRef.current.world, entry.body);
+        bodiesMapRef.current.delete(uid);
+      } else {
+        entry.settled = true;
+      }
+    });
+
+    setCards(kept);
+    setPhase('settled');
+    requestAnimationFrame(() => layoutSettledCards(kept));
+  }, [layoutSettledCards, stopPhysicsLoop]);
+
+  useEffect(() => {
+    if (phase !== 'settled') return;
+    const onResize = () => layoutSettledCards(cardsRef.current);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [phase, layoutSettledCards]);
+
+  // Spawn one card from the gun muzzle
+  const spawnCard = useCallback(() => {
+    const engine = engineRef.current;
+    const heroEl = heroRef.current;
+    const gunEl = gunZoneRef.current;
+    if (!engine || !heroEl || !gunEl) return;
+
+    const heroRect = heroEl.getBoundingClientRect();
+    const gunRect = gunEl.getBoundingClientRect();
+
+    // Gun muzzle is at the left-middle edge of the gun visual
+    const muzzleX = Math.max(
+      140,
+      gunRect.left - heroRect.left + gunRect.width * 0.12
+    );
+    const muzzleY =
+      gunRect.top - heroRect.top + gunRect.height * 0.48;
+
+    const template = GUN_CARDS[cardIndexRef.current % GUN_CARDS.length];
+    cardIndexRef.current += 1;
+    uidCounterRef.current += 1;
+    const uid = `card-${uidCounterRef.current}`;
+
+    const isMobile = heroRect.width < 640;
+    const baseDims = SIZE_DIMENSIONS[template.size || 'md'];
+    const scale = isMobile ? 0.78 : 0.92 + Math.random() * 0.16;
+    const width = Math.round(baseDims.w * scale);
+    const height = Math.round(baseDims.h * scale);
+
+    const body = Matter.Bodies.rectangle(muzzleX, muzzleY, width, height, {
+      restitution: 0.44,
+      friction: 0.35,
+      frictionAir: 0.012,
+      density: 0.002,
+      chamfer: { radius: 12 },
+    });
+
+    // Launch leftward with upward arc & spin
+    const speedX = isMobile ? -(9 + Math.random() * 7) : -(14 + Math.random() * 11);
+    const speedY = -(3.5 + Math.random() * 6.5);
+    Matter.Body.setVelocity(body, { x: speedX, y: speedY });
+    Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.24);
+
+    Matter.Composite.add(engine.world, body);
+    bodiesMapRef.current.set(uid, { body, width, height, settled: false });
+
+    setRecoilCounter((c) => c + 1);
+    setPhase('physics');
+
+    setCards((prev) => {
+      const next = [...prev, { uid, ...template, width, height }];
+      if (next.length > MAX_ACTIVE_CARDS) {
+        const removed = next.slice(0, next.length - MAX_ACTIVE_CARDS);
+        removed.forEach((old) => {
+          const oldEntry = bodiesMapRef.current.get(old.uid);
+          if (oldEntry && engineRef.current) {
+            Matter.Composite.remove(engineRef.current.world, oldEntry.body);
+            bodiesMapRef.current.delete(old.uid);
+          }
+          cardElMapRef.current.delete(old.uid);
+        });
+        return next.slice(next.length - MAX_ACTIVE_CARDS);
+      }
+      return next;
+    });
+  }, []);
+
+  // Begin spraying cards
+  const startSpraying = useCallback(() => {
+    if (reducedMotion || isSprayingRef.current) return;
+    isSprayingRef.current = true;
+    setIsSpraying(true);
+
+    if (settleTimerRef.current) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+
+    // Wake up any previously settled cards back into physics bodies
+    bodiesMapRef.current.forEach((entry, uid) => {
+      if (entry.settled) {
+        entry.settled = false;
+        const el = cardElMapRef.current.get(uid);
+        if (el) {
+          el.style.transition = 'none';
+          el.style.width = `${entry.width}px`;
+          el.style.height = `${entry.height}px`;
+        }
+        Matter.Body.setVelocity(entry.body, {
+          x: (Math.random() - 0.5) * 5,
+          y: -4 - Math.random() * 4,
+        });
+      }
+    });
+
+    startPhysicsLoop();
+    spawnCard();
+    spawnIntervalRef.current = setInterval(spawnCard, 70);
+  }, [reducedMotion, spawnCard, startPhysicsLoop]);
+
+  // Stop spraying & schedule tidy grid settle after 1.5s
+  const stopSpraying = useCallback(() => {
+    if (!isSprayingRef.current) return;
+    isSprayingRef.current = false;
+    setIsSpraying(false);
+
+    if (spawnIntervalRef.current) {
+      clearInterval(spawnIntervalRef.current);
+      spawnIntervalRef.current = null;
+    }
+
+    if (settleTimerRef.current) {
+      clearTimeout(settleTimerRef.current);
+    }
+    settleTimerRef.current = setTimeout(() => {
+      settleIntoGrid();
+    }, 1500);
+  }, [settleIntoGrid]);
+
+  // Clear all sprayed cards
+  const resetCards = useCallback(() => {
+    stopSpraying();
+    if (settleTimerRef.current) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    stopPhysicsLoop();
+    if (engineRef.current) {
+      bodiesMapRef.current.forEach((entry) => {
+        Matter.Composite.remove(engineRef.current.world, entry.body);
+      });
+    }
+    bodiesMapRef.current.clear();
+    cardElMapRef.current.clear();
+    setCards([]);
+    setPhase('idle');
+  }, [stopPhysicsLoop, stopSpraying]);
+
+  // Spacebar hold listener (only when not focused inside form inputs/buttons)
+  useEffect(() => {
+    const isTypingTarget = (target) => {
+      if (!target) return false;
+      const tag = target.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.isContentEditable
+      );
+    };
+
+    const onKeyDown = (e) => {
+      if (e.code === 'Space' && !isTypingTarget(e.target)) {
+        // Only intercept spacebar when Hero is reasonably visible
+        if (window.scrollY < window.innerHeight * 0.85) {
+          e.preventDefault();
+          if (!e.repeat) {
+            startSpraying();
+          }
+        }
+      }
+    };
+
+    const onKeyUp = (e) => {
+      if (e.code === 'Space') {
+        stopSpraying();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', stopSpraying);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', stopSpraying);
+    };
+  }, [startSpraying, stopSpraying]);
+
+  const handleCardClick = (target) => {
+    scrollToSection(target);
   };
 
   return (
     <section
-      id="home"
-      className="min-h-screen flex items-center justify-center bg-white dark:bg-black relative overflow-hidden pt-16 transition-colors duration-300"
+      id="hero"
+      ref={heroRef}
+      className="relative min-h-screen w-full overflow-hidden bg-paper paper-grain pt-24 pb-10 sm:pt-28 sm:pb-12 flex flex-col justify-between"
     >
-      {/* Animated Background Pattern */}
-      <div className="absolute inset-0 opacity-5 dark:opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zm20.97 0l9.315 9.314-1.414 1.414L34.828 0h2.83zM22.344 0L13.03 9.314l1.414 1.414L25.172 0h-2.83zM32 0l12.142 12.142-1.414 1.414L30 .828 17.272 13.556 15.858 12.14 28 0h4zm-7.03 0L10.686 14.284 9.272 12.87 22.344 0h2.626z' fill='%23000000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        }}></div>
-      </div>
+      {/* Main Hero Grid */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-5 sm:px-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
+        {/* Left Editorial Column */}
+        <div className="lg:col-span-7 flex flex-col items-start">
+          {/* Giant Editorial Headline */}
+          <h1 className="font-display font-extrabold text-ink text-[2.75rem] sm:text-[4rem] md:text-[4.65rem] xl:text-[5.25rem] leading-[0.94] tracking-[-0.035em] max-w-3xl">
+            Hi, I&apos;m{' '}
+            <span className="font-serif italic font-normal text-[1.12em] tracking-normal text-ink px-1">
+              {PROFILE.firstName}
+            </span>
+            , a software developer with a curious mind.
+          </h1>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center"
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-black dark:text-white mb-6 leading-tight"
+          {/* Muted Subtext */}
+          <p className="mt-5 sm:mt-6 text-base sm:text-lg md:text-xl text-muted max-w-xl leading-relaxed font-medium">
+            {PROFILE.tagline}
+          </p>
+
+          {/* Primary + Secondary Pill Buttons */}
+          <div className="mt-7 flex flex-wrap items-center gap-3.5">
+            <a
+              href="#work"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('#work');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-ink text-paper text-sm sm:text-base font-semibold hover:bg-lime hover:text-ink border border-ink transition-colors duration-200 shadow-sticker"
+            >
+              <span>See my work</span>
+              <ArrowDown className="w-4 h-4" aria-hidden="true" />
+            </a>
+
+            <a
+              href={PROFILE.resumeUrl}
+              download="Adarsh_Kesharwani_Resume.pdf"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-transparent text-ink text-sm sm:text-base font-semibold border-2 border-ink/25 hover:border-ink hover:bg-white transition-all duration-200"
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              <span>Download resume</span>
+            </a>
+
+            {cards.length > 0 && !reducedMotion && (
+              <button
+                type="button"
+                onClick={resetCards}
+                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full text-xs font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-white/80 border border-ink/15 transition-colors"
+                title="Clear sprayed cards"
+              >
+                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
+
+          {/* Settled Cards Landing Tray (also hosts static grid for reduced-motion) */}
+          <div
+            ref={trayRef}
+            className={`mt-8 w-full max-w-[760px] transition-opacity duration-300 ${
+              reducedMotion
+                ? 'min-h-[210px]'
+                : phase === 'settled'
+                ? 'min-h-[220px]'
+                : 'min-h-[140px] pointer-events-none'
+            }`}
+            aria-label="Interactive portfolio tag cards"
           >
-            Hello I'm <AnimatedText text="Adarsh Kesharwani" colors="from-blue-500 via-purple-500 to-pink-500" direction="ltr" />,
-            <br />
-            I'm a <AnimatedText text="Full Stack Developer" colors="from-green-500 via-cyan-500 to-blue-500" direction="rtl" />,
-            <br />
-            and I love building things for the web.
-          </motion.h1>
+            {reducedMotion && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                {staticGridCards.map((card) => {
+                  const theme = PALETTE[card.color] || PALETTE.lime;
+                  return (
+                    <button
+                      key={card.uid}
+                      type="button"
+                      onClick={() => handleCardClick(card.target)}
+                      style={{ backgroundColor: theme.bg, color: theme.text }}
+                      className="text-left rounded-2xl px-3.5 py-3 border border-ink/15 shadow-sticker hover:-translate-y-1 transition-transform"
+                    >
+                      <div className="font-extrabold text-xs tracking-tight uppercase truncate">
+                        {card.label}
+                      </div>
+                      <div
+                        className="text-[10px] font-mono uppercase tracking-wider mt-0.5 truncate"
+                        style={{ color: theme.subText }}
+                      >
+                        {card.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-base sm:text-lg md:text-2xl lg:text-3xl text-gray-700 dark:text-gray-300 mb-8"
-          >
-            Welcome to my space!
-          </motion.p>
-
-          <motion.a
-            href="#tech"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            whileHover={{ scale: 1.05, y: -3 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-black dark:bg-white text-white dark:text-black rounded-full font-semibold text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
-            onClick={(e) => {
+        {/* Right Column: The Red 3D "PORTFOLIO" Money Gun */}
+        <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-center relative">
+          <div
+            ref={gunZoneRef}
+            onPointerDown={(e) => {
               e.preventDefault();
-              document.querySelector('#tech').scrollIntoView({ behavior: 'smooth' });
+              startSpraying();
             }}
+            onPointerUp={stopSpraying}
+            onPointerCancel={stopSpraying}
+            onPointerLeave={stopSpraying}
+            role="button"
+            tabIndex={0}
+            aria-label="Hold to spray portfolio cards from the red 3D portfolio gun"
+            onKeyDown={(e) => {
+              if ((e.code === 'Enter' || e.code === 'Space') && !e.repeat) {
+                e.preventDefault();
+                startSpraying();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.code === 'Enter' || e.code === 'Space') {
+                stopSpraying();
+              }
+            }}
+            className="w-full max-w-[360px] sm:max-w-[430px] lg:max-w-[490px] h-[250px] sm:h-[320px] lg:h-[360px] cursor-pointer touch-none select-none relative group focus-visible:rounded-3xl"
           >
-            Explore my tech stack →
-          </motion.a>
-        </motion.div>
+            {/* Subtle glow halo behind gun */}
+            <div
+              aria-hidden="true"
+              className={`absolute inset-8 rounded-full blur-3xl transition-opacity duration-300 ${
+                isSpraying ? 'bg-lime/45 opacity-100' : 'bg-gunred/15 opacity-70'
+              }`}
+            />
+
+            {!reducedMotion && mount3D ? (
+              <WebGLErrorBoundary
+                fallback={
+                  <PortfolioGunVisual
+                    recoil={recoilCounter % 2 === 1 && isSpraying}
+                    isFiring={isSpraying}
+                  />
+                }
+              >
+                <Suspense
+                  fallback={
+                    <PortfolioGunVisual
+                      recoil={false}
+                      isFiring={isSpraying}
+                    />
+                  }
+                >
+                  <PortfolioGun3D
+                    recoilCounter={recoilCounter}
+                    isFiring={isSpraying}
+                  />
+                </Suspense>
+              </WebGLErrorBoundary>
+            ) : (
+              <PortfolioGunVisual recoil={false} isFiring={isSpraying} />
+            )}
+          </div>
+
+          {/* Mobile Touch-Hold Spray Button + Desktop Spacebar Hint */}
+          <div className="mt-2 w-full flex flex-col items-center lg:items-end gap-2.5 z-20">
+            {/* Mobile / Touch prominent hold-to-spray pill */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                startSpraying();
+              }}
+              onPointerUp={stopSpraying}
+              onPointerCancel={stopSpraying}
+              onPointerLeave={stopSpraying}
+              className={`lg:hidden inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-extrabold text-sm tracking-wide uppercase border-2 border-ink shadow-sticker touch-none select-none transition-transform ${
+                isSpraying
+                  ? 'bg-lime text-ink scale-95'
+                  : 'bg-gunred text-white active:scale-95'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              <span>{isSpraying ? 'Spraying...' : 'Hold to Spray'}</span>
+            </button>
+
+            {/* Bottom-right interactive hint bar */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                startSpraying();
+              }}
+              onPointerUp={stopSpraying}
+              onPointerCancel={stopSpraying}
+              onPointerLeave={stopSpraying}
+              className="hidden lg:inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/85 backdrop-blur-sm border border-ink/15 shadow-sm hover:border-ink/40 transition-colors touch-none select-none cursor-pointer"
+            >
+              <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-ink/75">
+                Hold the bar or
+              </span>
+              <span className={`keycap ${isSpraying ? 'is-pressed' : ''}`}>
+                SPACE
+              </span>
+              <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-ink/75">
+                to spray
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Physics DOM Layer: Crisp, clickable tag cards synced 1:1 with Matter.js bodies */}
+      {!reducedMotion && (
+        <div
+          aria-live="off"
+          className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
+        >
+          {cards.map((card) => {
+            const theme = PALETTE[card.color] || PALETTE.lime;
+            const isSettled = phase === 'settled';
+            return (
+              <button
+                key={card.uid}
+                ref={(el) => {
+                  if (el) {
+                    cardElMapRef.current.set(card.uid, el);
+                  } else {
+                    cardElMapRef.current.delete(card.uid);
+                  }
+                }}
+                type="button"
+                onClick={() => handleCardClick(card.target)}
+                style={{
+                  width: `${card.width}px`,
+                  height: `${card.height}px`,
+                  backgroundColor: theme.bg,
+                  color: theme.text,
+                  willChange: 'transform',
+                }}
+                className={`pointer-events-auto absolute top-0 left-0 text-left rounded-2xl px-3.5 py-2.5 border border-ink/15 shadow-sticker flex flex-col justify-between select-none ${
+                  isSettled
+                    ? 'cursor-pointer hover:shadow-lift hover:z-30 hover:brightness-[1.02]'
+                    : 'cursor-grab active:cursor-grabbing'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span className="font-display font-extrabold text-xs sm:text-[13px] tracking-tight uppercase leading-none truncate">
+                    {card.label}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{
+                      backgroundColor:
+                        card.color === 'black' ? '#C6F432' : theme.text,
+                      opacity: 0.75,
+                    }}
+                  />
+                </div>
+                <span
+                  className="font-mono text-[10px] font-medium uppercase tracking-wider truncate w-full"
+                  style={{ color: theme.subText }}
+                >
+                  {card.sub}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 };

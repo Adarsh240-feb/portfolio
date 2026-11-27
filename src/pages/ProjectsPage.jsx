@@ -1,12 +1,6 @@
 import React from 'react';
-import Projects from '../components/Projects';
+import Home from './Home';
 
-const ProjectsPage = () => {
-  return (
-    <div className="pt-20">
-      <Projects />
-    </div>
-  );
-};
+const ProjectsPage = () => <Home initialSection="#work" />;
 
 export default ProjectsPage;

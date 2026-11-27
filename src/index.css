@@ -2,34 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-paper: #F4F4F0;
+  --bg-surface: #ECECE6;
+  --ink: #111111;
+  --ink-muted: #5A5A54;
+  --border-subtle: rgba(17, 17, 17, 0.1);
+
+  /* Signature bright tag palette */
+  --accent-lime: #C6F432;
+  --accent-orange: #FF6B1A;
+  --accent-blue: #3B6BFF;
+  --accent-pink: #FF4FA3;
+  --accent-purple: #7B5CFF;
+  --accent-red: #E5201B;
+}
+
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  background-color: var(--bg-paper);
+  color: var(--ink);
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  margin: 0;
+  font-family: 'Bricolage Grotesque', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-paper);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
 }
 
-@layer utilities {
-  .animate-on-scroll {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.6s ease-out;
+/* Subtle editorial paper grain */
+.paper-grain {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.045) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Keycap 3D badge for [SPACE] */
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #111111;
+  background: #ffffff;
+  border: 1.5px solid #111111;
+  border-bottom-width: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 0 rgba(17, 17, 17, 0.08);
+  transition: transform 80ms ease, border-bottom-width 80ms ease;
+}
+
+.keycap.is-pressed {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  background: var(--accent-lime);
+}
+
+/* Marquee pause on hover */
+.marquee-track:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+/* Accessible focus outline */
+:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
-  
-  .animate-on-scroll.visible {
-    opacity: 1;
-    transform: translateY(0);
+  .marquee-content {
+    animation: none !important;
   }
 }
