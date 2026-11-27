@@ -13,7 +13,7 @@ const AboutSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="lg:col-span-5 relative"
+          className="lg:col-span-5 relative mb-6 lg:mb-0"
         >
           <div className="relative rounded-panel overflow-hidden border-2 border-ink bg-white shadow-sticker aspect-[4/4.4] max-w-md mx-auto">
             <img
@@ -25,7 +25,7 @@ const AboutSection = () => {
           </div>
 
           {/* Tilted Sticker Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-lime text-ink border-2 border-ink shadow-sticker font-bold text-sm -rotate-3 absolute -bottom-4 left-6 sm:left-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime text-ink border-2 border-ink shadow-sticker font-bold text-xs sm:text-sm -rotate-3 absolute -bottom-4 left-4 sm:left-10 max-w-[calc(100%-2rem)]">
             <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Based in {PROFILE.city}</span>
           </div>

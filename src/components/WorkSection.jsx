@@ -4,22 +4,22 @@ import { ArrowUpRight, Code2 } from 'lucide-react';
 import { PALETTE, PROJECTS } from '../data/portfolioData';
 
 const BrainTumorMockup = () => (
-  <div className="w-full h-full bg-[#19191B] text-white p-5 flex flex-col justify-between relative overflow-hidden">
-    <div className="flex items-center justify-between text-[11px] font-mono text-white/60">
-      <span>GRAD-CAM // EFFICIENTNET-B3</span>
-      <span className="px-2 py-0.5 rounded-full bg-lime text-ink font-bold">
+  <div className="w-full h-full bg-[#19191B] text-white p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+    <div className="flex items-center justify-between gap-2 text-[10px] sm:text-[11px] font-mono text-white/60">
+      <span className="truncate">GRAD-CAM // EFFICIENTNET-B3</span>
+      <span className="px-2 py-0.5 rounded-full bg-lime text-ink font-bold shrink-0">
         FASTAPI
       </span>
     </div>
-    <div className="my-auto flex items-center justify-center gap-5 py-3">
-      <div className="w-24 h-24 rounded-full border-2 border-white/25 bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center relative">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-orange via-pink to-lime opacity-85 blur-[2px]" />
-        <div className="absolute inset-2 rounded-full border border-dashed border-white/20" />
+    <div className="my-auto flex items-center justify-center gap-3 sm:gap-5 py-2 sm:py-3">
+      <div className="w-16 h-16 sm:w-24 sm:h-24 shrink-0 rounded-full border-2 border-white/25 bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center relative">
+        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-orange via-pink to-lime opacity-85 blur-[2px]" />
+        <div className="absolute inset-1.5 sm:inset-2 rounded-full border border-dashed border-white/20" />
       </div>
-      <div className="space-y-2 text-xs font-mono">
-        <div className="text-lime font-bold">LOCALIZATION: ACTIVE</div>
-        <div className="text-white/75">PIPELINE: TENSORFLOW + OPENCV</div>
-        <div className="text-white/55">UI: NEXT.JS + MONGODB</div>
+      <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs font-mono min-w-0">
+        <div className="text-lime font-bold truncate">LOCALIZATION: ACTIVE</div>
+        <div className="text-white/75 truncate">PIPELINE: TENSORFLOW + OPENCV</div>
+        <div className="text-white/55 truncate">UI: NEXT.JS + MONGODB</div>
       </div>
     </div>
     <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">

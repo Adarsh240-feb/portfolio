@@ -47,11 +47,11 @@ const ContactSection = () => {
             </h2>
 
             {/* Click-to-copy Email Row */}
-            <div className="relative inline-flex flex-wrap items-center gap-3 mb-8">
+            <div className="relative inline-flex flex-wrap items-center gap-2.5 sm:gap-3 mb-8 max-w-full">
               <button
                 type="button"
                 onClick={copyEmail}
-                className="group inline-flex items-center gap-3 text-left text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight text-ink underline decoration-2 decoration-ink/30 underline-offset-8 hover:decoration-lime transition-colors break-all"
+                className="group inline-flex items-center gap-2.5 sm:gap-3 text-left text-base sm:text-2xl md:text-3xl font-extrabold tracking-tight text-ink underline decoration-2 decoration-ink/30 underline-offset-8 hover:decoration-lime transition-colors break-all max-w-full"
               >
                 <span>{PROFILE.email}</span>
                 <span className="p-2 rounded-full bg-paper border border-ink/15 group-hover:bg-lime transition-colors shrink-0">

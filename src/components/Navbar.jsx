@@ -53,7 +53,7 @@ const Navbar = () => {
     >
       <nav
         aria-label="Primary navigation"
-        className="max-w-7xl mx-auto px-5 sm:px-8 h-18 py-4 flex items-center justify-between gap-4"
+        className="max-w-7xl mx-auto px-5 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between gap-4"
       >
         {/* Left Wordmark */}
         <a
@@ -104,7 +104,7 @@ const Navbar = () => {
           <a
             href="#contact"
             onClick={(e) => handleNavClick(e, '#contact')}
-            className="px-4 py-2 rounded-full bg-ink text-paper text-xs font-semibold"
+            className="px-4 py-2 rounded-full bg-ink text-paper text-xs font-semibold whitespace-nowrap"
           >
             Let&apos;s Talk
           </a>

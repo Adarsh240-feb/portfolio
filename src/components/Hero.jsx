@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react';
 import Matter from 'matter-js';
-import { ArrowDown, Download, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowDown, Download, RotateCcw } from 'lucide-react';
 import { GUN_CARDS, PALETTE, PROFILE } from '../data/portfolioData';
 import PortfolioGunVisual from './PortfolioGunVisual';
 import { scrollToSection } from './Navbar';
@@ -65,6 +65,7 @@ const Hero = () => {
   const [phase, setPhase] = useState('idle'); // 'idle' | 'physics' | 'settled'
   const [cards, setCards] = useState([]);
   const [mount3D, setMount3D] = useState(false);
+  const [trayHeight, setTrayHeight] = useState(0);
 
   useEffect(() => {
     cardsRef.current = cards;
@@ -241,33 +242,39 @@ const Hero = () => {
     const trayEl = trayRef.current;
     if (!heroEl || !trayEl || !cardList.length) return;
 
-    const heroRect = heroEl.getBoundingClientRect();
     const trayRect = trayEl.getBoundingClientRect();
-    const relLeft = trayRect.left - heroRect.left;
-    const relTop = trayRect.top - heroRect.top;
     const trayWidth = trayRect.width;
 
     const cols = trayWidth < 460 ? 2 : trayWidth < 760 ? 3 : 4;
     const gap = 10;
     const cellW = Math.min(182, (trayWidth - gap * (cols - 1)) / cols);
-    const cellH = 66;
+    const cellH = trayWidth < 460 ? 60 : 66;
+    const rows = Math.ceil(cardList.length / cols);
+    setTrayHeight(rows * cellH + Math.max(0, rows - 1) * gap);
 
-    cardList.forEach((card, idx) => {
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      const targetX = relLeft + col * (cellW + gap);
-      const targetY = relTop + row * (cellH + gap);
+    requestAnimationFrame(() => {
+      const updatedHeroRect = heroEl.getBoundingClientRect();
+      const updatedTrayRect = trayEl.getBoundingClientRect();
+      const left = updatedTrayRect.left - updatedHeroRect.left;
+      const top = updatedTrayRect.top - updatedHeroRect.top;
 
-      const el = cardElMapRef.current.get(card.uid);
-      if (el) {
-        el.style.width = `${cellW}px`;
-        el.style.height = `${cellH}px`;
-        el.style.transition =
-          'transform 680ms cubic-bezier(0.22, 1.28, 0.36, 1), width 400ms ease, height 400ms ease, box-shadow 220ms ease';
-        el.style.transform = `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(
-          1
-        )}px, 0) rotate(0deg)`;
-      }
+      cardList.forEach((card, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const targetX = left + col * (cellW + gap);
+        const targetY = top + row * (cellH + gap);
+
+        const el = cardElMapRef.current.get(card.uid);
+        if (el) {
+          el.style.width = `${cellW}px`;
+          el.style.height = `${cellH}px`;
+          el.style.transition =
+            'transform 680ms cubic-bezier(0.22, 1.28, 0.36, 1), width 400ms ease, height 400ms ease, box-shadow 220ms ease';
+          el.style.transform = `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(
+            1
+          )}px, 0) rotate(0deg)`;
+        }
+      });
     });
   }, []);
 
@@ -321,9 +328,12 @@ const Hero = () => {
     const heroRect = heroEl.getBoundingClientRect();
     const gunRect = gunEl.getBoundingClientRect();
 
+    const isStacked = heroRect.width < 1024;
+    const isMobile = heroRect.width < 640;
+
     // Gun muzzle is at the left-middle edge of the gun visual
     const muzzleX = Math.max(
-      140,
+      isMobile ? 36 : 120,
       gunRect.left - heroRect.left + gunRect.width * 0.12
     );
     const muzzleY =
@@ -334,9 +344,8 @@ const Hero = () => {
     uidCounterRef.current += 1;
     const uid = `card-${uidCounterRef.current}`;
 
-    const isMobile = heroRect.width < 640;
     const baseDims = SIZE_DIMENSIONS[template.size || 'md'];
-    const scale = isMobile ? 0.78 : 0.92 + Math.random() * 0.16;
+    const scale = isMobile ? 0.72 : 0.92 + Math.random() * 0.16;
     const width = Math.round(baseDims.w * scale);
     const height = Math.round(baseDims.h * scale);
 
@@ -348,9 +357,13 @@ const Hero = () => {
       chamfer: { radius: 12 },
     });
 
-    // Launch leftward with upward arc & spin
-    const speedX = isMobile ? -(9 + Math.random() * 7) : -(14 + Math.random() * 11);
-    const speedY = -(3.5 + Math.random() * 6.5);
+    // Launch leftward (desktop) or fan upward-left across stacked mobile viewport
+    const speedX = isStacked
+      ? -3 + (Math.random() - 0.35) * 9
+      : -(14 + Math.random() * 11);
+    const speedY = isStacked
+      ? -(8.5 + Math.random() * 5.5)
+      : -(3.5 + Math.random() * 6.5);
     Matter.Body.setVelocity(body, { x: speedX, y: speedY });
     Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.24);
 
@@ -383,6 +396,7 @@ const Hero = () => {
     if (reducedMotion || isSprayingRef.current) return;
     isSprayingRef.current = true;
     setIsSpraying(true);
+    setTrayHeight(0);
 
     if (settleTimerRef.current) {
       clearTimeout(settleTimerRef.current);
@@ -446,6 +460,7 @@ const Hero = () => {
     bodiesMapRef.current.clear();
     cardElMapRef.current.clear();
     setCards([]);
+    setTrayHeight(0);
     setPhase('idle');
   }, [stopPhysicsLoop, stopSpraying]);
 
@@ -506,7 +521,7 @@ const Hero = () => {
         {/* Left Editorial Column */}
         <div className="lg:col-span-7 flex flex-col items-start">
           {/* Giant Editorial Headline */}
-          <h1 className="font-display font-extrabold text-ink text-[2.75rem] sm:text-[4rem] md:text-[4.65rem] xl:text-[5.25rem] leading-[0.94] tracking-[-0.035em] max-w-3xl">
+          <h1 className="font-display font-extrabold text-ink text-[2.25rem] sm:text-[3.75rem] md:text-[4.5rem] xl:text-[5.25rem] leading-[0.95] tracking-[-0.035em] max-w-3xl">
             Hi, I&apos;m{' '}
             <span className="font-serif italic font-normal text-[1.12em] tracking-normal text-ink px-1">
               {PROFILE.firstName}
@@ -515,19 +530,19 @@ const Hero = () => {
           </h1>
 
           {/* Muted Subtext */}
-          <p className="mt-5 sm:mt-6 text-base sm:text-lg md:text-xl text-muted max-w-xl leading-relaxed font-medium">
+          <p className="mt-4 sm:mt-6 text-[15px] sm:text-lg md:text-xl text-muted max-w-xl leading-relaxed font-medium">
             {PROFILE.tagline}
           </p>
 
           {/* Primary + Secondary Pill Buttons */}
-          <div className="mt-7 flex flex-wrap items-center gap-3.5">
+          <div className="mt-6 sm:mt-7 flex flex-wrap items-center gap-3">
             <a
               href="#work"
               onClick={(e) => {
                 e.preventDefault();
                 scrollToSection('#work');
               }}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-ink text-paper text-sm sm:text-base font-semibold hover:bg-lime hover:text-ink border border-ink transition-colors duration-200 shadow-sticker"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-full bg-ink text-paper text-sm sm:text-base font-semibold hover:bg-lime hover:text-ink border border-ink transition-colors duration-200 shadow-sticker"
             >
               <span>See my work</span>
               <ArrowDown className="w-4 h-4" aria-hidden="true" />
@@ -536,7 +551,7 @@ const Hero = () => {
             <a
               href={PROFILE.resumeUrl}
               download="Adarsh_Kesharwani_Resume.pdf"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-transparent text-ink text-sm sm:text-base font-semibold border-2 border-ink/25 hover:border-ink hover:bg-white transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-full bg-transparent text-ink text-sm sm:text-base font-semibold border-2 border-ink/25 hover:border-ink hover:bg-white transition-all duration-200"
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               <span>Download resume</span>
@@ -546,7 +561,7 @@ const Hero = () => {
               <button
                 type="button"
                 onClick={resetCards}
-                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full text-xs font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-white/80 border border-ink/15 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-full text-xs font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-white/80 border border-ink/15 transition-colors"
                 title="Clear sprayed cards"
               >
                 <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
@@ -558,12 +573,17 @@ const Hero = () => {
           {/* Settled Cards Landing Tray (also hosts static grid for reduced-motion) */}
           <div
             ref={trayRef}
-            className={`mt-8 w-full max-w-[760px] transition-opacity duration-300 ${
+            style={
+              !reducedMotion && phase === 'settled' && trayHeight
+                ? { minHeight: `${trayHeight}px` }
+                : undefined
+            }
+            className={`w-full max-w-[760px] transition-all duration-300 ${
               reducedMotion
-                ? 'min-h-[210px]'
+                ? 'mt-7 min-h-[210px]'
                 : phase === 'settled'
-                ? 'min-h-[220px]'
-                : 'min-h-[140px] pointer-events-none'
+                ? 'mt-6 sm:mt-8'
+                : 'mt-2 lg:mt-8 min-h-[12px] lg:min-h-[140px] pointer-events-none'
             }`}
             aria-label="Interactive portfolio tag cards"
           >
@@ -621,7 +641,7 @@ const Hero = () => {
                 stopSpraying();
               }
             }}
-            className="w-full max-w-[360px] sm:max-w-[430px] lg:max-w-[490px] h-[250px] sm:h-[320px] lg:h-[360px] cursor-pointer touch-none select-none relative group focus-visible:rounded-3xl"
+            className="w-full max-w-[300px] sm:max-w-[420px] lg:max-w-[490px] h-[220px] sm:h-[300px] lg:h-[360px] cursor-pointer touch-none no-callout relative group focus-visible:rounded-3xl"
           >
             {/* Subtle glow halo behind gun */}
             <div
@@ -664,6 +684,7 @@ const Hero = () => {
             {/* Mobile / Touch prominent hold-to-spray pill */}
             <button
               type="button"
+              onContextMenu={(e) => e.preventDefault()}
               onPointerDown={(e) => {
                 e.preventDefault();
                 startSpraying();
@@ -671,13 +692,12 @@ const Hero = () => {
               onPointerUp={stopSpraying}
               onPointerCancel={stopSpraying}
               onPointerLeave={stopSpraying}
-              className={`lg:hidden inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-extrabold text-sm tracking-wide uppercase border-2 border-ink shadow-sticker touch-none select-none transition-transform ${
+              className={`lg:hidden inline-flex items-center justify-center px-7 py-3.5 rounded-full font-extrabold text-sm tracking-wide uppercase border-2 border-ink shadow-sticker touch-none no-callout transition-transform ${
                 isSpraying
                   ? 'bg-lime text-ink scale-95'
                   : 'bg-gunred text-white active:scale-95'
               }`}
             >
-              <Sparkles className="w-4 h-4" aria-hidden="true" />
               <span>{isSpraying ? 'Spraying...' : 'Hold to Spray'}</span>
             </button>
 

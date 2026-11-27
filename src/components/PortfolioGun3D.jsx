@@ -459,7 +459,7 @@ const PortfolioGun3D = ({ recoilCounter = 0, isFiring = false }) => {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [-0.22, 0.32, 4.95], fov: 40 }}
+        camera={{ position: [-0.2, 0.3, 5.15], fov: 40 }}
         gl={{
           antialias: true,
           alpha: true,
