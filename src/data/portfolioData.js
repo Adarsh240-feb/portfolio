@@ -314,6 +314,7 @@ export const EDUCATION = {
   degree: 'B.Tech in Computer Science & Engineering',
   period: '2023 – 2027',
   highlights: [
+    'Invited to Graduation Day — Road to Wiki Cohort 2',
     'Top 7 — 6th Technovation Hackathon, Sharda University',
     'Top 10 Finalist — State Level Hackathon, United University',
     '2nd Position — College-Level Programming Contest',
